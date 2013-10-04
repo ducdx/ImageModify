@@ -62,7 +62,7 @@ public class MainActivity extends Activity implements OnClickListener{
 	 */
 	private void openCameraToTakePicture(){
 		Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-		String folderStore = Utils.
-		intent.putExtra(name, value)
+		//String folderStore = Utils.
+		//intent.putExtra(name, value)
 	}
 }
