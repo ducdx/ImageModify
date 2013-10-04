@@ -28,37 +28,72 @@ import android.util.TypedValue;
 
 import com.framgia.takasukamera.constant.AppConstant;
 
+/**
+ * @author Admin
+ *
+ */
 public class Utils {
 	private static final String TAG = "TakasuKamera";
-	
-	private boolean checkDeviceStorage(){
+	public static Uri tempPhotoUri = getTempPhotoUri();
+
+	private static boolean checkDeviceStorage() {
 		String externalStorateState = Environment.getExternalStorageState();
-		
-		if(externalStorateState.equals(Environment.MEDIA_MOUNTED)){
+
+		if (externalStorateState.equals(Environment.MEDIA_MOUNTED)) {
 			return true;
 		}
 		return false;
 	}
-	private Uri getFolderStorePath(){
-		if(!checkDeviceStorage()){
+
+	public static File createTempFile() throws IOException {
+		// Check temporary picture folder
+		File rootFolder = Environment.getExternalStorageDirectory();
+		File tempFile = new File(rootFolder.getAbsolutePath()
+				+ AppConstant.TEMP_FILE_JPG);
+		if (!tempFile.exists()) {
+			tempFile.createNewFile();
+		}
+		return tempFile;
+	}
+
+	public static Uri getTempPhotoUri() {
+		if (!checkDeviceStorage()) {
 			return null;
 		}
-		
-		String folderPath = "";
-		try{
-			//Check temporary picture folder
-			File rootFolder = Environment.getExternalStorageDirectory();
-			File pictureFolder = new File(rootFolder.getAbsolutePath(),AppConstant.TEMP_FILE_JPG);
-		}catch(Exception e){
-			Log.e(TAG, "" + e.getMessage());
-			return null;
+		File photo;
+		try {
+			// Place where to store camera taken picture
+			photo = createTempFile();
+			return Uri.fromFile(photo);
+		} catch (Exception e) {
+			Log.v(TAG, "Can't create file to take picture");
+			return Uri.EMPTY;
 		}
-		
-		return null;
+	}
+
+	public static void deleteTempFile() {
+		File rootFolder = Environment.getExternalStorageDirectory();
+		File temFile = new File(rootFolder.getAbsolutePath()
+				+ AppConstant.TEMP_FILE_JPG);
+		if (temFile.exists()) {
+			temFile.delete();
+		}
+	}
+
+	public static boolean isTempFileExisted() {
+		File rootFolder = Environment.getExternalStorageDirectory();
+		File tempFile = new File(rootFolder.getAbsolutePath()
+				+ AppConstant.TEMP_FILE_JPG);
+		if (tempFile.exists()) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public static Bitmap convert(Bitmap bitmap, Bitmap.Config config) {
-		Bitmap convertedBitmap = Bitmap.createBitmap(bitmap.getWidth(),bitmap.getHeight(), config);
+		Bitmap convertedBitmap = Bitmap.createBitmap(bitmap.getWidth(),
+				bitmap.getHeight(), config);
 		Canvas canvas = new Canvas(convertedBitmap);
 		Paint paint = new Paint();
 		paint.setColor(Color.BLACK);
@@ -66,7 +101,8 @@ public class Utils {
 		return convertedBitmap;
 	}
 
-	public static Bitmap codec(Bitmap src, Bitmap.CompressFormat format,int quality) {
+	public static Bitmap codec(Bitmap src, Bitmap.CompressFormat format,
+			int quality) {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		src.compress(format, quality, os);
 
@@ -75,19 +111,21 @@ public class Utils {
 	}
 
 	public static String saveBitmapToGallery(Bitmap bitmap, Activity activity) {
-		//Get path to public storage
-		File fileStore = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-		File mediaStorageDir = new File(fileStore,AppConstant.APP_NAME);
+		// Get path to public storage
+		File fileStore = Environment
+				.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+		File mediaStorageDir = new File(fileStore, AppConstant.APP_NAME);
 
-		//Check whether storage folder exist?
+		// Check whether storage folder exist?
 		if (!mediaStorageDir.exists()) {
-			//If this folder is not exist, create it (include its parent)
+			// If this folder is not exist, create it (include its parent)
 			if (!mediaStorageDir.mkdirs()) {
 				return "";
 			}
 		}
 
-		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss")
+				.format(new Date());
 		File mediaFile = new File(mediaStorageDir.getPath() + File.separator
 				+ AppConstant.APP_NAME + timeStamp + ".jpg");
 
@@ -109,11 +147,13 @@ public class Utils {
 		return "";
 	}
 
-	public static Bitmap getBitmapFromUri(Activity activity, Uri uri,boolean forDetection) {
+	public static Bitmap getBitmapFromUri(Activity activity, Uri uri,
+			boolean forDetection) {
 
 		// Get screen size to calculate appropriate size for bitmap
 		DisplayMetrics displaymetrics = new DisplayMetrics();
-		activity.getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+		activity.getWindowManager().getDefaultDisplay()
+				.getMetrics(displaymetrics);
 		Resources r = activity.getResources();
 		int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
 				forDetection ? 95 : 50, r.getDisplayMetrics());
