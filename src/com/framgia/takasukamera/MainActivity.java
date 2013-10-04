@@ -1,8 +1,10 @@
 package com.framgia.takasukamera;
 
 import com.example.takasukamera.R;
+import com.framgia.takasukamera.constant.AppConstant;
 import com.framgia.takasukamera.util.Utils;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.app.Activity;
@@ -11,6 +13,7 @@ import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 public class MainActivity extends Activity implements OnClickListener{
 
@@ -48,6 +51,7 @@ public class MainActivity extends Activity implements OnClickListener{
 		case R.id.button_camera:
 			break;
 		case R.id.button_album:
+			openGallery();
 			break;
 		case R.id.button_other:
 			break;
@@ -65,4 +69,32 @@ public class MainActivity extends Activity implements OnClickListener{
 		//String folderStore = Utils.
 		//intent.putExtra(name, value)
 	}
+	
+	
+	/**
+	 * This function is used to process onClick event for button Gallery
+	 */
+	private void openGallery(){
+		Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+		intent.setType("image/*");
+		startActivityForResult(intent, AppConstant.SELECT_PICTURE_REQUEST);
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if(resultCode != RESULT_OK){
+			return;
+		}
+		
+		switch(requestCode){
+		case AppConstant.TAKE_PICTURE_REQUEST:
+			break;
+		case AppConstant.SELECT_PICTURE_REQUEST:
+			Uri uri = data.getData();
+			Toast.makeText(MainActivity.this, "" + uri.getPath(), Toast.LENGTH_SHORT).show();
+			break;
+		}
+	}
+	
+	
 }

@@ -1,8 +1,8 @@
 package com.framgia.takasukamera.constant;
 
 public class AppConstant {
-	public static final int CAMERA_REQUEST = 1;
-	public static final int ALBUM_REQUEST = 2;
+	public static final int TAKE_PICTURE_REQUEST = 1;
+	public static final int SELECT_PICTURE_REQUEST = 2;
 	public static final int STAMP_REQUEST = 3;
 	
 	 public static final String APP_NAME ="TakasuKamera";
