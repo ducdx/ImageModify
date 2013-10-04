@@ -1,19 +1,21 @@
 package com.framgia.takasukamera;
 
-import com.example.takasukamera.R;
-import com.framgia.takasukamera.constant.AppConstant;
-import com.framgia.takasukamera.util.Utils;
+import java.io.File;
 
-import android.net.Uri;
-import android.os.Bundle;
-import android.provider.MediaStore;
 import android.app.Activity;
 import android.content.Intent;
-import android.view.Menu;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
 import android.widget.Toast;
+
+import com.example.takasukamera.R;
+import com.framgia.takasukamera.constant.AppConstant;
+import com.framgia.takasukamera.util.Utils;
 
 public class MainActivity extends Activity implements OnClickListener{
 
@@ -49,6 +51,7 @@ public class MainActivity extends Activity implements OnClickListener{
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.button_camera:
+			openCameraToTakePicture();
 			break;
 		case R.id.button_album:
 			openGallery();
@@ -65,9 +68,25 @@ public class MainActivity extends Activity implements OnClickListener{
 	 * This function is used to process onClick event for button camera
 	 */
 	private void openCameraToTakePicture(){
+		if(!Utils.checkDeviceStorage()){
+			return;
+		}
 		Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-		//String folderStore = Utils.
-		//intent.putExtra(name, value)
+		/*
+		File tmpFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),"tmp_img_" + String.valueOf(System.currentTimeMillis()) + ".png");
+		if(!tmpFile.exists()){
+			try{
+				tmpFile.createNewFile();
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+			
+		}
+		tmpFile.delete();
+		Uri imgUri = Uri.fromFile(tmpFile);
+		
+		intent.putExtra(MediaStore.EXTRA_OUTPUT,imgUri);*/
+		startActivityForResult(intent, AppConstant.TAKE_PICTURE_REQUEST);
 	}
 	
 	
@@ -82,7 +101,7 @@ public class MainActivity extends Activity implements OnClickListener{
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if(resultCode != RESULT_OK){
+		if(resultCode != RESULT_OK ){
 			return;
 		}
 		
@@ -90,8 +109,7 @@ public class MainActivity extends Activity implements OnClickListener{
 		case AppConstant.TAKE_PICTURE_REQUEST:
 			break;
 		case AppConstant.SELECT_PICTURE_REQUEST:
-			Uri uri = data.getData();
-			Toast.makeText(MainActivity.this, "" + uri.getPath(), Toast.LENGTH_SHORT).show();
+			
 			break;
 		}
 	}
