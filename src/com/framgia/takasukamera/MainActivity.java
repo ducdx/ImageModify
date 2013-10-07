@@ -104,9 +104,8 @@ public class MainActivity extends Activity implements OnClickListener {
 			}
 			break;
 		case AppConstant.SELECT_PICTURE_REQUEST:
-			Intent intent = new Intent(this, EditImageActivity.class);
-			intent.setData(data.getData());
-			startActivity(intent);
+			data.setClass(MainActivity.this, EditImageActivity.class);
+			startActivity(data);
 			break;
 		}
 

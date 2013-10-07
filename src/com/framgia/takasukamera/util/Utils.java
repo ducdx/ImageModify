@@ -2,8 +2,10 @@ package com.framgia.takasukamera.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -17,6 +19,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.media.ExifInterface;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -232,7 +235,7 @@ public class Utils {
 		return rotatedBitmap;
 	}
 
-	public static int calculateSampleSize(Activity activity, Options options,
+	public static int calculateSampleSize(Activity activity, int width,int height,
 			int reqWidth, int reqHeight, boolean forFacedetect) {
 
 		if (forFacedetect) {
@@ -250,9 +253,6 @@ public class Utils {
 		}
 
 		int inSampleSize = 1;
-
-		int width = options.outWidth;
-		int height = options.outHeight;
 
 		if (height > reqHeight || width > reqWidth) {
 
@@ -281,16 +281,25 @@ public class Utils {
 			throws Exception {
 
 		// First decode with inJustDecodeBounds=true to check dimensions
-		final BitmapFactory.Options options = new BitmapFactory.Options();
+		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inJustDecodeBounds = true;
-		BitmapFactory.decodeFile(uri.getPath(), options);
-
+		
+		Bitmap bmp = null;
+		
+		InputStream is = activity.getContentResolver().openInputStream(uri);		
+		BitmapFactory.decodeStream(is, null, options);
+		is.close();
+		
+		is = activity.getContentResolver().openInputStream(uri);	
 		// Calculate inSampleSize
-		options.inSampleSize = calculateSampleSize(activity, options, reqWidth,
+		options.inSampleSize = calculateSampleSize(activity, options.outWidth,options.outHeight, reqWidth,
 				reqHeight, forFaceDetect);
 
 		// Decode bitmap with inSampleSize set
-		options.inJustDecodeBounds = false;
-		return BitmapFactory.decodeFile(uri.getPath(), options);
+		options.inJustDecodeBounds = false;		
+		bmp = BitmapFactory.decodeStream(is, null, options);		
+		is.close();
+		
+		return bmp;
 	}
 }

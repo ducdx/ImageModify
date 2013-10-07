@@ -58,10 +58,8 @@ public class EditImageActivity extends Activity implements OnClickListener {
 		// get Uri of image file
 		Uri photoUri = getIntent().getData();
 		// show image file on an ImageView
-		Bitmap bmp = Utils.getBitmapFromUri(EditImageActivity.this, photoUri,
-				true);
-		// mImgView.setImageBitmap(bmp);
-		mImgView.setImageURI(photoUri);
+		Bitmap bmp = Utils.getBitmapFromUri(EditImageActivity.this, photoUri,true);
+		mImgView.setImageBitmap(bmp);
 
 	}
 
