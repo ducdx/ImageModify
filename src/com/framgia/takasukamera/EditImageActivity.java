@@ -68,6 +68,7 @@ public class EditImageActivity extends Activity implements OnClickListener {
 			backToMainActivity();
 			break;
 		case R.id.button_finish:
+			startShareActivity();
 			break;
 		case R.id.button_delete_image:
 			break;
@@ -86,6 +87,11 @@ public class EditImageActivity extends Activity implements OnClickListener {
 		Intent intent = new Intent(EditImageActivity.this, MainActivity.class);
 		startActivity(intent);
 		finish();
+	}
+	
+	private void startShareActivity(){
+		Intent intent = new Intent(EditImageActivity.this,ShareActivity.class);
+		startActivity(intent);
 	}
 
 }

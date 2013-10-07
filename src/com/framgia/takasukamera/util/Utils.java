@@ -36,7 +36,8 @@ public class Utils {
 	private static final String TAG = "TakasuKamera";
 	public static Uri tempPhotoUri = getTempPhotoUri();
 
-	private static boolean checkDeviceStorage() {
+	
+	public static boolean checkDeviceStorage(){
 		String externalStorateState = Environment.getExternalStorageState();
 
 		if (externalStorateState.equals(Environment.MEDIA_MOUNTED)) {
