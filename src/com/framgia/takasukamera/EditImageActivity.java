@@ -34,11 +34,7 @@ public class EditImageActivity extends Activity implements OnClickListener {
 
 		// initialize view components
 		initView();
-		// get Uri of image file
-		Uri photoUri = getIntent().getData();
-		// show image file on an ImageView
-		Bitmap bmp = Utils.getBitmapFromUri(EditImageActivity.this, photoUri, true);
-		mImgView.setImageBitmap(bmp);
+
 	}
 
 	private void initView() {
@@ -58,6 +54,14 @@ public class EditImageActivity extends Activity implements OnClickListener {
 		mBtnStamp.setOnClickListener(this);
 		mBtnFaceDetect.setOnClickListener(this);
 		mBtnUndo.setOnClickListener(this);
+
+		// get Uri of image file
+		Uri photoUri = getIntent().getData();
+		// show image file on an ImageView
+		Bitmap bmp = Utils.getBitmapFromUri(EditImageActivity.this, photoUri,
+				true);
+		// mImgView.setImageBitmap(bmp);
+		mImgView.setImageURI(photoUri);
 
 	}
 
@@ -88,9 +92,9 @@ public class EditImageActivity extends Activity implements OnClickListener {
 		startActivity(intent);
 		finish();
 	}
-	
-	private void startShareActivity(){
-		Intent intent = new Intent(EditImageActivity.this,ShareActivity.class);
+
+	private void startShareActivity() {
+		Intent intent = new Intent(EditImageActivity.this, ShareActivity.class);
 		startActivity(intent);
 	}
 

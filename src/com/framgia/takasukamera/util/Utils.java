@@ -30,11 +30,10 @@ import com.framgia.takasukamera.constant.AppConstant;
 
 /**
  * @author Admin
- *
+ * 
  */
 public class Utils {
 	private static final String TAG = "TakasuKamera";
-	public static Uri tempPhotoUri = getTempPhotoUri();
 
 	
 	public static boolean checkDeviceStorage(){
@@ -46,28 +45,22 @@ public class Utils {
 		return false;
 	}
 
-	public static File createTempFile() throws IOException {
-		// Check temporary picture folder
-		File rootFolder = Environment.getExternalStorageDirectory();
-		File tempFile = new File(rootFolder.getAbsolutePath()
-				+ AppConstant.TEMP_FILE_JPG);
-		if (!tempFile.exists()) {
-			tempFile.createNewFile();
-		}
-		return tempFile;
-	}
-
-	public static Uri getTempPhotoUri() {
+	public static Uri getPhotoUri() {
 		if (!checkDeviceStorage()) {
 			return null;
 		}
-		File photo;
+		File rootFolder = Environment.getExternalStorageDirectory();
+		File tempPhoto = new File(rootFolder.getAbsolutePath()
+				+ AppConstant.TEMP_FILE_JPG);
 		try {
-			// Place where to store camera taken picture
-			photo = createTempFile();
-			return Uri.fromFile(photo);
-		} catch (Exception e) {
-			Log.v(TAG, "Can't create file to take picture");
+			if (!tempPhoto.exists()) {
+
+				tempPhoto.createNewFile();
+			}
+			Uri tempPhotoUri = Uri.fromFile(tempPhoto);
+			return tempPhotoUri;
+		} catch (IOException e) {
+			e.printStackTrace();
 			return Uri.EMPTY;
 		}
 	}

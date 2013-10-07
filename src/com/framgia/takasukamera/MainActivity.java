@@ -59,6 +59,9 @@ public class MainActivity extends Activity implements OnClickListener {
 			openGallery();
 			break;
 		case R.id.button_other:
+			Intent intent = new Intent(Intent.ACTION_VIEW);
+			intent.setData(Uri.parse(AppConstant.TAKASU_HOME_PAGE));
+			startActivity(intent);
 			break;
 		default:
 			break;
@@ -72,7 +75,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		Intent intent = new Intent(
 				android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
 		Utils.deleteTempFile();
-		intent.putExtra(MediaStore.EXTRA_OUTPUT, Utils.getTempPhotoUri());
+		intent.putExtra(MediaStore.EXTRA_OUTPUT, Utils.getPhotoUri());
 		startActivityForResult(intent, AppConstant.TAKE_PICTURE_REQUEST);
 	}
 
@@ -96,12 +99,14 @@ public class MainActivity extends Activity implements OnClickListener {
 		case AppConstant.TAKE_PICTURE_REQUEST:
 			if (Utils.isTempFileExisted()) {
 				Intent intent = new Intent(this, EditImageActivity.class);
-				intent.setData(Utils.tempPhotoUri);
+				intent.setData(Utils.getPhotoUri());
 				startActivity(intent);
 			}
 			break;
 		case AppConstant.SELECT_PICTURE_REQUEST:
-
+			Intent intent = new Intent(this, EditImageActivity.class);
+			intent.setData(data.getData());
+			startActivity(intent);
 			break;
 		}
 
