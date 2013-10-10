@@ -20,10 +20,10 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
 import android.widget.Toast;
-
 import com.example.takasukamera.R;
 import com.framgia.takasukamera.customview.DraggableFace;
 import com.framgia.takasukamera.customview.MultiTouchImageView;
+import com.framgia.takasukamera.constant.AppConstant;
 import com.framgia.takasukamera.util.Utils;
 
 public class EditImageActivity extends Activity implements OnClickListener {
@@ -35,15 +35,15 @@ public class EditImageActivity extends Activity implements OnClickListener {
 	private ImageButton mBtnStamp;
 	private ImageButton mBtnFaceDetect;
 	private ImageButton mBtnUndo;
-	
+
 	/** Bitmap */
 	private Bitmap mSourceBitmap;
 
 	/** View */
 	private MultiTouchImageView mImgView;
-	
+
 	private ArrayList<DraggableFace> mFaceList;
-		
+
 	Thread detectFaceThread;
 
 	@Override
@@ -53,7 +53,7 @@ public class EditImageActivity extends Activity implements OnClickListener {
 
 		// initialize view components
 		initView();
-		
+
 	}
 
 	private void initView() {
@@ -77,24 +77,27 @@ public class EditImageActivity extends Activity implements OnClickListener {
 		// get Uri of image file
 		Uri photoUri = getIntent().getData();
 		// show image file on an ImageView
-		mSourceBitmap = Utils.getBitmapFromUri(EditImageActivity.this, photoUri,true);
-		
-		if(mSourceBitmap == null){
+		mSourceBitmap = Utils.getBitmapFromUri(EditImageActivity.this,
+				photoUri, true);
+
+		if (mSourceBitmap == null) {
 			return;
 		}
-		
-		Log.i("ImageViewSize", "width: " + mSourceBitmap.getWidth() + " height: " + mSourceBitmap.getHeight());
+
+		Log.i("ImageViewSize", "width: " + mSourceBitmap.getWidth()
+				+ " height: " + mSourceBitmap.getHeight());
 		mImgView.setImageBitmap(mSourceBitmap);
-		
+
 		detectFaceThread = new Thread(new Runnable() {
-			
+
 			@Override
 			public void run() {
 				mFaceList = getFaceRectInBitmap(mSourceBitmap);
 			}
 		});
-		
+
 		detectFaceThread.start();
+
 	}
 
 	@Override
@@ -109,6 +112,9 @@ public class EditImageActivity extends Activity implements OnClickListener {
 		case R.id.button_delete_image:
 			break;
 		case R.id.button_stamp:
+			Intent intenStamp = new Intent(EditImageActivity.this,
+					StampActivity.class);
+			startActivityForResult(intenStamp, AppConstant.STAMP_REQUEST);
 			break;
 		case R.id.button_face_detect:
 			new ReplaceFace().execute();
@@ -118,6 +124,12 @@ public class EditImageActivity extends Activity implements OnClickListener {
 		default:
 			break;
 		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+
 	}
 
 	/**
@@ -138,24 +150,24 @@ public class EditImageActivity extends Activity implements OnClickListener {
 	public void onBackPressed() {
 		backToMainActivity();
 	}
-	
-	private class ReplaceFace extends AsyncTask<Void, Void, Void>{
+
+	private class ReplaceFace extends AsyncTask<Void, Void, Void> {
 
 		ProgressDialog mProgressDlg = null;
 		MediaPlayer mMediaPlayer = null;
-		
+
 		Thread delayThread = new Thread(new Runnable() {
-			
+
 			@Override
 			public void run() {
-				try{
+				try {
 					Thread.sleep(2000);
-				}catch(Exception e){
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 		});
-		
+
 		@Override
 		protected void onPreExecute() {
 			mProgressDlg = new ProgressDialog(EditImageActivity.this);
@@ -166,15 +178,15 @@ public class EditImageActivity extends Activity implements OnClickListener {
 			playSound(R.raw.yes3);
 			super.onPreExecute();
 		}
-		
+
 		@Override
 		protected Void doInBackground(Void... params) {
-			try{
+			try {
 				detectFaceThread.join();
 				delayThread.join();
-			}catch(InterruptedException e){
+			} catch (InterruptedException e) {
 				e.printStackTrace();
-			}catch(Exception e){
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			return null;
@@ -182,46 +194,50 @@ public class EditImageActivity extends Activity implements OnClickListener {
 
 		@Override
 		protected void onPostExecute(Void result) {
-			
-			if(mProgressDlg != null){
+
+			if (mProgressDlg != null) {
 				mProgressDlg.dismiss();
 				mProgressDlg = null;
 			}
-			if(mFaceList == null || mFaceList.isEmpty()){
-				Toast.makeText(EditImageActivity.this, "Could not detect any face", Toast.LENGTH_SHORT).show();
+			if (mFaceList == null || mFaceList.isEmpty()) {
+				Toast.makeText(EditImageActivity.this,
+						"Could not detect any face", Toast.LENGTH_SHORT).show();
 				playSound(R.raw.takasu1);
-			}else{
+			} else {
 				int numberSize = mFaceList.size();
-				//create list of random face index
+				// create list of random face index
 				ArrayList<Integer> arrIndex = new ArrayList<Integer>();
-				for(int i=0;i<numberSize;i++){
-					int pos = i%3;
+				for (int i = 0; i < numberSize; i++) {
+					int pos = i % 3;
 					arrIndex.add(Integer.valueOf(pos));
 				}
-				
-				//Shuffle array index to get random value
+
+				// Shuffle array index to get random value
 				Collections.shuffle(arrIndex);
-				
+
 				RectF rect = mImgView.getInnerBitmapSize();
-				float scale = (float)mSourceBitmap.getWidth()/rect.width();
-				
-				for(int index = 0;index<numberSize;index++){
-					//get random face bitmap				       
+				float scale = (float) mSourceBitmap.getWidth() / rect.width();
+
+				for (int index = 0; index < numberSize; index++) {
+					// get random face bitmap
 					int posFace = arrIndex.get(index).intValue();
 					int resourceId = -1;
-					if(posFace == 1){
+					if (posFace == 1) {
 						resourceId = R.drawable.incho_1;
-					}else if(posFace == 2){
+					} else if (posFace == 2) {
 						resourceId = R.drawable.incho_2;
-					}else{
+					} else {
 						resourceId = R.drawable.incho;
 					}
-					
+
 					DraggableFace drgFace = mFaceList.get(index);
-					Bitmap bmp = BitmapFactory.decodeResource(getResources(), resourceId);
-					Bitmap scaleBitmap = Bitmap.createScaledBitmap(bmp, (int)(drgFace.getFaceWidth()/scale), (int)(drgFace.getFaceHeight()/scale), false);
+					Bitmap bmp = BitmapFactory.decodeResource(getResources(),
+							resourceId);
+					Bitmap scaleBitmap = Bitmap.createScaledBitmap(bmp,
+							(int) (drgFace.getFaceWidth() / scale),
+							(int) (drgFace.getFaceHeight() / scale), false);
 					drgFace.mBitmap = scaleBitmap;
-					
+
 					mImgView.addOverlayBitmap(drgFace, scale);
 					mImgView.invalidate();
 				}
@@ -231,26 +247,26 @@ public class EditImageActivity extends Activity implements OnClickListener {
 			super.onPostExecute(result);
 		}
 
-		private void playSound(int soundId){
-			if(mMediaPlayer!=null){
-                if(mMediaPlayer.isPlaying()){
-                	mMediaPlayer.stop();
-                }
-                mMediaPlayer.release();
-                mMediaPlayer = null;
-            }
+		private void playSound(int soundId) {
+			if (mMediaPlayer != null) {
+				if (mMediaPlayer.isPlaying()) {
+					mMediaPlayer.stop();
+				}
+				mMediaPlayer.release();
+				mMediaPlayer = null;
+			}
 			mMediaPlayer = MediaPlayer.create(EditImageActivity.this, soundId);
-            if (mMediaPlayer!=null) {
-            	mMediaPlayer.start();
-            }
+			if (mMediaPlayer != null) {
+				mMediaPlayer.start();
+			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * This function is used to detect face in a picture.
 	 */
-	private ArrayList<DraggableFace> getFaceRectInBitmap(Bitmap bmp){
+	private ArrayList<DraggableFace> getFaceRectInBitmap(Bitmap bmp) {
 		int numberFace = 50;
 		FaceDetector faceDetector;
 		FaceDetector.Face[] detectedFace = new FaceDetector.Face[numberFace];
@@ -260,40 +276,40 @@ public class EditImageActivity extends Activity implements OnClickListener {
 		int topFace;
 		int rightFace;
 		int bottomFace;
-		
+
 		ArrayList<DraggableFace> FaceArr = new ArrayList<DraggableFace>();
-		faceDetector = new FaceDetector(bmp.getWidth(), bmp.getHeight(), numberFace);
-		Bitmap detectBitmap = Utils.changeBitmapConfig(bmp, Bitmap.Config.RGB_565);
+		faceDetector = new FaceDetector(bmp.getWidth(), bmp.getHeight(),
+				numberFace);
+		Bitmap detectBitmap = Utils.changeBitmapConfig(bmp,
+				Bitmap.Config.RGB_565);
 		numberFaceDetected = faceDetector.findFaces(detectBitmap, detectedFace);
-		Log.i("Number of face detected:","" + numberFaceDetected);
-		if(numberFaceDetected <= 0){
+		Log.i("Number of face detected:", "" + numberFaceDetected);
+		if (numberFaceDetected <= 0) {
 			return null;
 		}
-		
-		for(int i=0;i<numberFaceDetected;i++){
+
+		for (int i = 0; i < numberFaceDetected; i++) {
 			FaceDetector.Face face = detectedFace[i];
 			PointF midPoint = new PointF();
 			face.getMidPoint(midPoint);
 			eyesDistance = face.eyesDistance();
-			
-			//create rect for face
-			leftFace = (int) (midPoint.x - 7*eyesDistance /5);
-            topFace = (int) (midPoint.y - 9*eyesDistance/5);
-            rightFace = (int) (midPoint.x + 7*eyesDistance /5);
-            bottomFace = (int) (midPoint.y + 9*eyesDistance/5);
-			            
-           
-            
-			//Create face to replace
+
+			// create rect for face
+			leftFace = (int) (midPoint.x - 7 * eyesDistance / 5);
+			topFace = (int) (midPoint.y - 9 * eyesDistance / 5);
+			rightFace = (int) (midPoint.x + 7 * eyesDistance / 5);
+			bottomFace = (int) (midPoint.y + 9 * eyesDistance / 5);
+
+			// Create face to replace
 			DraggableFace dragFace = new DraggableFace(null);
 			dragFace.setLeftFace(leftFace);
 			dragFace.setTopFace(topFace);
 			dragFace.setFaceWidth(rightFace - leftFace);
-			dragFace.setFaceHeight(bottomFace - topFace); 
-			
+			dragFace.setFaceHeight(bottomFace - topFace);
+
 			FaceArr.add(dragFace);
 		}
-		
+
 		return FaceArr;
 	}
 
