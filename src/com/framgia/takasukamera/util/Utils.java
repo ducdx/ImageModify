@@ -2,7 +2,7 @@ package com.framgia.takasukamera.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,12 +14,10 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.BitmapFactory.Options;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.media.ExifInterface;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -32,7 +30,7 @@ import android.util.TypedValue;
 import com.framgia.takasukamera.constant.AppConstant;
 
 /**
- * @author Admin
+ * @author xuanduc
  * 
  */
 public class Utils {
@@ -88,7 +86,7 @@ public class Utils {
 		}
 	}
 
-	public static Bitmap convert(Bitmap bitmap, Bitmap.Config config) {
+	public static Bitmap changeBitmapConfig(Bitmap bitmap, Bitmap.Config config) {
 		Bitmap convertedBitmap = Bitmap.createBitmap(bitmap.getWidth(),
 				bitmap.getHeight(), config);
 		Canvas canvas = new Canvas(convertedBitmap);
@@ -238,29 +236,31 @@ public class Utils {
 	public static int calculateSampleSize(Activity activity, int width,int height,
 			int reqWidth, int reqHeight, boolean forFacedetect) {
 
+		int inSampleSize = 1;
+		
+		float widthRatio  = 1;
+		float heightRatio = 1;
+		
+
 		if (forFacedetect) {
 			int bestSize = 1200;
 			// Recalculate require size
 			if (reqWidth < bestSize && reqHeight < bestSize) {
-				final float heightRatio = (float) bestSize / (float) reqHeight;
-				final float widthRatio = (float) bestSize / (float) reqWidth;
-				final float ratio = (heightRatio < widthRatio) ? heightRatio
-						: widthRatio;
+				heightRatio = (float) bestSize / (float) reqHeight;
+				widthRatio = (float) bestSize / (float) reqWidth;
+				float ratio = ((heightRatio < widthRatio) ? heightRatio: widthRatio);
 				reqWidth = (int) (reqWidth * ratio);
 				reqHeight = (int) (reqHeight * ratio);
 			}
 
 		}
 
-		int inSampleSize = 1;
-
 		if (height > reqHeight || width > reqWidth) {
 
 			// Calculate ratios of height and width to requested height and
 			// width
-			final int heightRatio = Math.round((float) height
-					/ (float) reqHeight);
-			final int widthRatio = Math.round((float) width / (float) reqWidth);
+			heightRatio =  (float)height/(float)reqHeight;
+			widthRatio = (float) width / (float)reqWidth;
 
 			if (heightRatio == 0 || widthRatio == 0) {
 				return inSampleSize;
@@ -270,12 +270,13 @@ public class Utils {
 			// guarantee
 			// a final image with both dimensions larger than or equal to the
 			// requested height and width.
-			inSampleSize = heightRatio < widthRatio ? heightRatio : widthRatio;
+			float sampleSize = heightRatio < widthRatio ? heightRatio : widthRatio;
+			inSampleSize = Math.round(sampleSize);
 		}
 
 		return inSampleSize;
 	}
-
+	
 	public static Bitmap decodeSampleBitmap(Activity activity, Uri uri,
 			int reqWidth, int reqHeight, boolean forFaceDetect)
 			throws Exception {
@@ -302,4 +303,5 @@ public class Utils {
 		
 		return bmp;
 	}
+
 }
