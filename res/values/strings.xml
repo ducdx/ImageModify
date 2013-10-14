@@ -4,6 +4,8 @@
     <string name="app_name">TakasuKamera</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    <string name="hint_comment">Enter your comment</string>
+    <string name="button_sharecomment">Share Comment</string>
     <string name="twitter_logged_in">isTwitterLoggedIn</string>
     <string name="twitter_comsumer_key">qZdcQiefRmP00fa8Qea9tQ</string>
     <string name="twitter_comsumer_secret">LH5FNeL7fZEHWAl9GBgBbNHTs1V4KGwSkwGm53dK8</string>
