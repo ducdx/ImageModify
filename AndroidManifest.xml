@@ -54,12 +54,18 @@
         <activity
             android:name="com.framgia.takasukamera.ShareActivity"
             android:label="@string/app_name"
+            android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Black.NoTitleBar" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="twitter"
+                    android:scheme="takasukamera" />
             </intent-filter>
         </activity>
         <activity
