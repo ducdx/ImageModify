@@ -8,8 +8,18 @@
     <string name="button_sharecomment">Share Comment</string>
     <string name="twitter_logged_in">isTwitterLoggedIn</string>
     <string name="twitter_comsumer_key">qZdcQiefRmP00fa8Qea9tQ</string>
+    <string name="fb_appid">301603086616529</string>
     <string name="twitter_comsumer_secret">LH5FNeL7fZEHWAl9GBgBbNHTs1V4KGwSkwGm53dK8</string>
     <string name="twitter_callback_url">takasukamera://twitter</string>
-    <string name="string_default_twitter">高須院長と記念撮影しました。 https://takasuapp.com #takasu</string>
+    <string name="string_default_facebook">高須院長と記念撮影しました。 takasuapp.com</string>
+    <string name="string_default_twitter">高須院長と記念撮影しました。 takasuapp.com #takasu</string>
+    <string name="login_fb_success">Login success!</string>
+    <string name="login_fb_failure">Login failure!</string>
+    <string name="login_fb_canceled">Login canceled!</string>
+    <string name="login_fb_error">Login error</string>
+    <string name="post_success">Post successful!</string>
+    <string name="post_failed">Post failed!</string>
+    <string name="save_picture_success">Save success</string>
+    <string name="save_picture_failed">Save failed</string>
 
 </resources>

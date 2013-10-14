@@ -2,12 +2,16 @@ package com.framgia.takasukamera;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.media.FaceDetector;
@@ -20,11 +24,13 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
 import android.widget.Toast;
+
 import com.example.takasukamera.R;
+import com.framgia.takasukamera.constant.AppConstant;
 import com.framgia.takasukamera.customview.DraggableFace;
 import com.framgia.takasukamera.customview.MultiTouchImageView;
-import com.framgia.takasukamera.constant.AppConstant;
 import com.framgia.takasukamera.util.Utils;
+
 
 public class EditImageActivity extends Activity implements OnClickListener {
 
@@ -38,7 +44,9 @@ public class EditImageActivity extends Activity implements OnClickListener {
 
 	/** Bitmap */
 	private Bitmap mSourceBitmap;
+	private Bitmap finalBitmap;
 
+	private String tmpPicturePath;
 	/** View */
 	private MultiTouchImageView mImgView;
 
@@ -110,6 +118,8 @@ public class EditImageActivity extends Activity implements OnClickListener {
 			startShareActivity();
 			break;
 		case R.id.button_delete_image:
+			mImgView.deleteActiveBitmap();
+			mImgView.invalidate();
 			break;
 		case R.id.button_stamp:
 			Intent intenStamp = new Intent(EditImageActivity.this,
@@ -120,6 +130,8 @@ public class EditImageActivity extends Activity implements OnClickListener {
 			new ReplaceFace().execute();
 			break;
 		case R.id.button_undo:
+			mImgView.undo();
+			mImgView.invalidate();
 			break;
 		default:
 			break;
@@ -128,6 +140,20 @@ public class EditImageActivity extends Activity implements OnClickListener {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if(resultCode != RESULT_OK){
+			return;
+		}
+		
+		if(requestCode == AppConstant.STAMP_REQUEST){
+			Bitmap bmp = (Bitmap)data.getExtras().get("data");
+			if(bmp == null){
+				return;
+			}
+			
+			DraggableFace stamp = new DraggableFace(bmp);
+			mImgView.addOverlayBitmap(stamp, 1.0f);
+			mImgView.invalidate();
+		}
 		super.onActivityResult(requestCode, resultCode, data);
 
 	}
@@ -142,8 +168,74 @@ public class EditImageActivity extends Activity implements OnClickListener {
 	}
 
 	private void startShareActivity() {
-		Intent intent = new Intent(EditImageActivity.this, ShareActivity.class);
-		startActivity(intent);
+		//save bitmap to share
+		Bitmap outputBitmap = (finalBitmap == null) ? mSourceBitmap
+                : finalBitmap;
+        outputBitmap = createFinalBitmapToShare(outputBitmap);
+        tmpPicturePath = Utils.saveBitmapToGallery(outputBitmap,
+                this);
+        if (!"".equals(tmpPicturePath)) {
+            Toast.makeText(this,
+                    getResources().getString(R.string.save_picture_success),
+                    Toast.LENGTH_SHORT).show();
+
+            // Start share activity if save file success
+            Intent intent = new Intent(this, ShareActivity.class);
+            intent.putExtra(AppConstant.IMAGE_PATH, tmpPicturePath);
+            startActivity(intent);
+
+        } else {
+            Toast.makeText(this,
+                    getResources().getString(R.string.save_picture_failed),Toast.LENGTH_SHORT).show();
+        }
+		
+	}
+	
+	private Bitmap createFinalBitmapToShare(Bitmap inputBitmap) {
+
+        Bitmap finalBitmap = Bitmap.createBitmap(inputBitmap.getWidth(),
+                inputBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(finalBitmap);
+        canvas.drawBitmap(inputBitmap, 0, 0, null);
+
+
+        RectF scaledImg = mImgView.getInnerBitmapSize();
+        float scale = inputBitmap.getWidth() / scaledImg.width();
+        
+        List<DraggableFace> stampList = mImgView.getOverlayList();
+        if (stampList.size() > 0) {
+            Enumeration<DraggableFace> e = Collections.enumeration(stampList);
+            while (e.hasMoreElements()) {
+            	DraggableFace dBmp = (DraggableFace) e.nextElement();
+
+                Matrix finalMtx = new Matrix();
+                
+				//calculate margin and move back
+				Matrix marginMtx = dBmp.getMarginMatrix();
+				float[] moveArr = new float[9];
+				marginMtx.getValues(moveArr);
+				float x = -(moveArr[2]);
+				float y = -(moveArr[5]);
+				Matrix moveBackMtx = new Matrix();
+				moveBackMtx.postTranslate(x, y);
+
+				// current manipulate matrix (rotate, zoom, move..)
+				Matrix manipulateMtx = dBmp.getCurrentMatrix();
+				Matrix scaleMtx = new Matrix();
+				
+				//scale to original size
+				scaleMtx.postScale(scale, scale, 0, 0);
+
+				manipulateMtx = (manipulateMtx == null) ? new Matrix()
+						: manipulateMtx;
+				finalMtx.postConcat(manipulateMtx);
+				finalMtx.postConcat(moveBackMtx);
+				finalMtx.postConcat(scaleMtx);
+				canvas.drawBitmap(dBmp.mBitmap, finalMtx, null);
+			}
+		}
+
+		return finalBitmap;
 	}
 
 	@Override

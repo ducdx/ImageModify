@@ -15,12 +15,19 @@ public class ShareActivity extends Activity implements OnClickListener {
 	private ImageButton mBtnShareFacebook;
 	private ImageButton mBtnShareTwitter;
 	private ImageButton mBtnBack;
+	String imgPath;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.share_activity_layout);
-
+		Bundle bundle = getIntent().getExtras();
+		if(bundle == null){
+			return;
+		}
+		
+		imgPath = bundle.getString(AppConstant.IMAGE_PATH);
+		
 		initView();
 	}
 
@@ -43,12 +50,14 @@ public class ShareActivity extends Activity implements OnClickListener {
 			break;
 		case R.id.button_share_twitter:
 			i.putExtra(AppConstant.SHARE_REQUEST,
-					AppConstant.SHARE_TWITTER_REQUEST);
+					AppConstant.TO_TWITTER);
+			i.putExtra(AppConstant.IMAGE_PATH, imgPath);
 			startActivity(i);
 			break;
 		case R.id.button_share_facebook:
 			i.putExtra(AppConstant.SHARE_REQUEST,
-					AppConstant.SHARE_FACEBOOK_REQUEST);
+					AppConstant.TO_FACEBOOK);
+			i.putExtra(AppConstant.IMAGE_PATH, imgPath);
 			startActivity(i);
 			break;
 

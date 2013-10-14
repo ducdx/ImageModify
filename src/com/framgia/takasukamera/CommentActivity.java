@@ -1,58 +1,104 @@
 package com.framgia.takasukamera;
 
-import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
-import twitter4j.StatusUpdate;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
-import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
-
-import com.example.takasukamera.R;
-import com.framgia.takasukamera.constant.AppConstant;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.WindowManager;
+import android.view.WindowManager.LayoutParams;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class CommentActivity extends Activity {
+import com.example.takasukamera.R;
+import com.framgia.takasukamera.constant.AppConstant;
+import com.framgia.takasukamera.social.FacebookUtils;
+import com.framgia.takasukamera.social.FbLoginChangeListener;
+import com.framgia.takasukamera.social.TwitterUtils;
+
+public class CommentActivity extends Activity implements OnClickListener,FbLoginChangeListener{
 	private ImageButton btnBack;
 	private ImageButton btnShareComment;
 	private ImageView imageShare;
 	private EditText editComment;
 	private ProgressDialog mProgressDialog;
 	private SharedPreferences mSharedPreferences;
-	private int shareOption;
+	private int shareOption = AppConstant.TO_FACEBOOK;
 	private String message;
+	
+	/** Variable of CallBack. */
+	private String urlCallBack = "takasukamera://twitter";
+	
+	@Override
+	protected void onNewIntent(Intent intent) {
+		Uri uri = intent.getData();
+		boolean result = TwitterUtils.handleOAuthCallback(this, uri,
+				urlCallBack);
+		if (result) {
+			Toast.makeText(this, getString(R.string.login_fb_success),
+					Toast.LENGTH_LONG).show();
+		} else {
+			Toast.makeText(this, getString(R.string.login_fb_failure),
+					Toast.LENGTH_LONG).show();
+			finish();
+		}
+		super.onNewIntent(intent);
+	}
+
+	private Bundle bundle;
+	
+	/** Content post to wall */
+	private String postContent = "";
+	String imgPath;
+	
+	private Bitmap bmpShare;	
+	private boolean isResumeWhenPressBack = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.comment_activity);
+		
+		bundle = getIntent().getExtras();
+		if(bundle == null){
+			return;
+		}
+		
+		imgPath = bundle.getString(AppConstant.IMAGE_PATH);
+		bmpShare = BitmapFactory.decodeFile(imgPath);
+		
+		shareOption = bundle.getInt("app_pos");
 		mSharedPreferences = getApplicationContext().getSharedPreferences(
 				"kameraAppSharedPreferences", MODE_PRIVATE);
 		mProgressDialog = new ProgressDialog(this);
 		// get option to share via twitter or facebook
 		shareOption = getIntent().getExtras().getInt(AppConstant.SHARE_REQUEST);
+		
+		if (FacebookUtils.isAuthenticated(this)) {
+			// Process logout facebook.
+			FacebookUtils.logOut(CommentActivity.this);
+		}
 
 		// Init View
 		initView();
@@ -66,197 +112,149 @@ public class CommentActivity extends Activity {
 		btnShareComment = (ImageButton) findViewById(R.id.button_sharecomment);
 		imageShare = (ImageView) findViewById(R.id.image_share);
 		editComment = (EditText) findViewById(R.id.edit_comment);
+		
+		
+		if(shareOption == AppConstant.TO_FACEBOOK){
+			postContent = "\n" + getString(R.string.string_default_facebook);
+		}else{
+			postContent = "\n" + getString(R.string.string_default_twitter);
+		}
+		
+		editComment.setText(postContent);
+		
+		BitmapFactory.Options option = new BitmapFactory.Options();
+		option.inJustDecodeBounds = false;
+		option.inSampleSize = 8;
+		Bitmap bmp = BitmapFactory.decodeFile(imgPath, option);
+		imageShare.setImageBitmap(bmp);
+		
+		btnBack.setOnClickListener(this);
+		btnShareComment.setOnClickListener(this);
+	}
 
-		btnBack.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
+
+	
+	/**************************************************************************
+	 * 
+	 * This class is used for post message and image to facebook, twitter.
+	 * 
+	 **************************************************************************/
+	class PostMessage extends AsyncTask<Integer, Void, Boolean> implements
+			OnCancelListener {
+
+		/** Dialog show when load token. */
+		private ProgressDialog prDialog = null;
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			if (prDialog == null) {
+				prDialog = new ProgressDialog(CommentActivity.this);
+				prDialog.setMessage("Please wait");
+				prDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+				prDialog.setCancelable(true);
+				prDialog.setCanceledOnTouchOutside(false);
+				prDialog.show();
+			}
+
+		}
+
+		@Override
+		protected Boolean doInBackground(Integer... params) {
+			Boolean result = false;
+			if (params[0] == AppConstant.TO_FACEBOOK) {
+				// Post to facebook wall.
+				if (FacebookUtils.postToWall(CommentActivity.this,postContent, bmpShare)) {
+					result = true;
+				}
+			} else {
+				if (TwitterUtils.sendTweet(CommentActivity.this,postContent, bmpShare)) {
+					result = true;
+				}
+			}
+			return result;
+		}
+
+		@Override
+		protected void onPostExecute(Boolean result) {
+
+			if (prDialog != null) {
+				prDialog.dismiss();
+				prDialog = null;
+			}
+
+			if (result) {
+				Toast.makeText(CommentActivity.this,
+						getString(R.string.post_success), Toast.LENGTH_SHORT)
+						.show();
 				finish();
-			}
-		});
-
-		btnShareComment.setOnClickListener(new View.OnClickListener() {
-			public void onClick(View v) {
-				message = editComment.getText().toString();
-				switch (shareOption) {
-				case AppConstant.SHARE_TWITTER_REQUEST:
-					shareViaTwitter();
-					break;
-				case AppConstant.SHARE_FACEBOOK_REQUEST:
-					break;
-
-				}
-				editComment.setText("");
-
-			}
-		});
-	}
-
-	private void shareViaTwitter() {
-		if (isTwitterLoginedAlready()) {
-			if (!isConnectingToInternet()) {
-				Toast.makeText(CommentActivity.this, "Connection Lost!",
-						Toast.LENGTH_LONG).show();
-				return;
+			} else {
+				Toast.makeText(CommentActivity.this,
+						getString(R.string.post_failed), Toast.LENGTH_SHORT)
+						.show();
 			}
 
-			AlertDialog tweetDialog = new AlertDialog.Builder(this)
-					.setTitle("Share an Image via Twitter")
-					.setPositiveButton("OK",
-							new DialogInterface.OnClickListener() {
-								@Override
-								public void onClick(
-										DialogInterface dialogInterface, int i) {
-									AsyncTask<String, Void, Boolean> task = new AsyncTask<String, Void, Boolean>() {
-										@Override
-										protected Boolean doInBackground(
-												String... params) {
-											try {
-												// setting for twitter instance
-												Twitter mTwitter = new TwitterFactory()
-														.getInstance();
-												mTwitter.setOAuthConsumer(
-														getString(R.string.twitter_comsumer_key),
-														getString(R.string.twitter_comsumer_secret));
-												AccessToken accessToken = null;
-												try {
-													InputStream in = openFileInput("twitterAccessToken");
-													ObjectInputStream ois = new ObjectInputStream(
-															in);
-													accessToken = (AccessToken) ois
-															.readObject();
-												} catch (Exception e) {
-													e.printStackTrace();
-												}
-												mTwitter.setOAuthAccessToken(accessToken);
-												// now is the time to tweet
-												// something
-												try {
-													StatusUpdate status = new StatusUpdate(
-															params[0]);
-													// status.media(new
-													// File(mSavedPicPath));
-													mTwitter.updateStatus(status);
-													return true;
-												} catch (TwitterException e) {
-													e.printStackTrace();
-												}
-												return false;
-											} catch (Exception e) {
-												e.printStackTrace();
-											}
-											return false;
-										}
-
-										@Override
-										protected void onPostExecute(
-												Boolean result) {
-											// show the toast
-											Toast.makeText(
-													CommentActivity.this,
-													result ? " OK " : "Failed",
-													Toast.LENGTH_LONG).show();
-											// can dismiss progress status
-											if (mProgressDialog.isShowing()) {
-												mProgressDialog.hide();
-											}
-										}
-									};
-									// show progress dialog
-									mProgressDialog.setMessage("Uploading");
-									mProgressDialog.show();
-									// execute task
-									task.execute(message);
-								}
-							})
-					.setNegativeButton("Cancel",
-							new DialogInterface.OnClickListener() {
-								@Override
-								public void onClick(
-										DialogInterface dialogInterface, int i) {
-
-								}
-							}).create();
-			tweetDialog.show();
-		} else {
-			// authenticate Twitter Account
-			authenticateTwitterAccount();
+			super.onPostExecute(result);
 		}
 
-	}
-
-	/**
-	 * Get feedback from browser.
-	 */
-	@Override
-	protected void onNewIntent(Intent intent) {
-		super.onNewIntent(intent);
-		Uri uri = intent.getData();
-		if (uri == null
-				|| !uri.toString().startsWith(
-						getString(R.string.twitter_callback_url))) {
-			return;
+		@Override
+		public void onCancel(DialogInterface dialog) {
+			if (prDialog != null) {
+				prDialog.dismiss();
+				prDialog = null;
+			}
+			dialog.cancel();
 		}
-		String verifier = uri.getQueryParameter("oauth_verifier");
-		AsyncTask<String, Void, Boolean> task = new AsyncTask<String, Void, Boolean>() {
-			@Override
-			protected Boolean doInBackground(String... params) {
-				try {
-					Twitter mTwitter = new TwitterFactory().getInstance();
-					mTwitter.setOAuthConsumer(
-							getString(R.string.twitter_comsumer_key),
-							getString(R.string.twitter_comsumer_secret));
-					// get RequestToken has been save before
-					RequestToken requestToken = null;
-					ObjectInputStream mObjectInputStream = null;
-					try {
-						InputStream mInputStream = openFileInput("twitterRequestToken");
-						mObjectInputStream = new ObjectInputStream(mInputStream);
-						requestToken = (RequestToken) mObjectInputStream
-								.readObject();
-						mObjectInputStream.close();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					AccessToken accessToken = null;
-					accessToken = mTwitter.getOAuthAccessToken(requestToken,
-							params[0]);
-					// save AccessToken
-					ObjectOutputStream mObjectOutputStream = null;
-					try {
-						OutputStream mOutputStream = openFileOutput(
-								"twitterAccessToken", MODE_PRIVATE);
-						mObjectOutputStream = new ObjectOutputStream(
-								mOutputStream);
-						mObjectOutputStream.writeObject(accessToken);
-						mObjectOutputStream.close();
+	}
+	
+	
+	
+	class LoginTwitter extends AsyncTask<Void, Void, Void> implements OnCancelListener{
+		/** Dialog show when load token. */
+		private ProgressDialog prDialog = null;
 
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+		@Override
+		protected void onPreExecute() {
 
-					Editor editor = mSharedPreferences.edit();
-					editor.putBoolean(getString(R.string.twitter_logged_in),
-							true);
-					editor.commit();
-					return true;
-				} catch (TwitterException e) {
-					e.printStackTrace();
-				}
-				return false;
+			if (prDialog == null) {
+				prDialog = new ProgressDialog(CommentActivity.this);
+				prDialog.setMessage("Please wait");
+				prDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+				prDialog.setCancelable(true);
+				prDialog.setOnCancelListener(this);
+				prDialog.setCanceledOnTouchOutside(false);
+				prDialog.show();
 			}
+			super.onPreExecute();
+		}
 
-			@Override
-			protected void onPostExecute(Boolean result) {
-				super.onPostExecute(result);
-				if (result)
-					shareViaTwitter();
-				else
-					Toast.makeText(CommentActivity.this, "Failed",
-							Toast.LENGTH_LONG).show();
+		@Override
+		protected Void doInBackground(Void... params) {
+
+			// Login to twitter.
+			TwitterUtils.login(CommentActivity.this, urlCallBack);
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+
+			if (prDialog != null) {
+				prDialog.dismiss();
+				prDialog = null;
 			}
-		};
+			super.onPostExecute(result);
+		}
 
-		task.execute(verifier);
+		@Override
+		public void onCancel(DialogInterface dialog) {
+			this.cancel(true);
+			if (prDialog != null) {
+				prDialog.dismiss();
+				prDialog = null;
+			}
+			finish();
+		}
 	}
 
 	/**
@@ -273,7 +271,7 @@ public class CommentActivity extends Activity {
 								getString(R.string.twitter_comsumer_key),
 								getString(R.string.twitter_comsumer_secret));
 						RequestToken requestToken = mTwitter
-								.getOAuthRequestToken(getString(R.string.twitter_callback_url));
+								.getOAuthRequestToken(TwitterUtils.CALLBACK_URL);
 						// save request token
 						ObjectOutputStream mObjectOutputStream = null;
 						try {
@@ -335,5 +333,89 @@ public class CommentActivity extends Activity {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public void updateLogin(boolean loginStatus) {
+		if (!loginStatus) {
+			finish();
+		} else {
+			editComment.requestFocus();
+			getWindow().setSoftInputMode(LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+		}
+	}
+
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()) {
+		case R.id.button_back:
+			finish();
+			break;
+			
+		case R.id.button_sharecomment:
+			postContent = editComment.getText().toString();
+			if (shareOption == AppConstant.TO_FACEBOOK) {
+				if (!FacebookUtils.isAuthenticated(this)) {
+					FacebookUtils.login(this);
+				}else{
+					new PostMessage().execute(AppConstant.TO_FACEBOOK);
+				}
+				
+			} else {
+				//shareViaTwitter();
+				
+				if (!TwitterUtils.isAuthenticated(this)) {
+					(new LoginTwitter()).execute();
+				}else{
+					if (postContent.length() > 140) {
+						// Show message post failed.
+						AlertDialog alertDlg = new AlertDialog.Builder(
+								CommentActivity.this).create();
+						alertDlg.setMessage("The maximum number of characterizes is 140");
+						alertDlg.setButton(
+								android.content.DialogInterface.BUTTON_POSITIVE,
+								"OK", new DialogInterface.OnClickListener() {
+
+									@Override
+									public void onClick(DialogInterface dialog,
+											int which) {
+										// TODO Auto-generated method stub
+										dialog.dismiss();
+									}
+								});
+						alertDlg.show();
+						return;
+					} else {
+						// Perform post to twitter.
+						new PostMessage().execute(AppConstant.TO_TWITTER);
+					}
+				}
+				
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+	
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+		if (isResumeWhenPressBack) {
+			if (!TwitterUtils.isAuthenticated(this)) {
+				finish();
+			}
+		}
+		getWindow().setSoftInputMode(
+				WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+	}
+
+	@Override
+	protected void onPause() {
+		// TODO Auto-generated method stub
+		isResumeWhenPressBack = true;
+		super.onPause();
 	}
 }
