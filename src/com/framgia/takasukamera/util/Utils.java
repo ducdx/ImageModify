@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -26,6 +27,8 @@ import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 
 import com.framgia.takasukamera.constant.AppConstant;
 
@@ -303,5 +306,19 @@ public class Utils {
 		
 		return bmp;
 	}
+	
+    public static void clearCookies(Context context) {
+        // Edge case: an illegal state exception is thrown if an instance of
+        // CookieSyncManager has not be created.  CookieSyncManager is normally
+        // created by a WebKit view, but this might happen if you start the
+        // app, restore saved state, and click logout before running a UI
+        // dialog in a WebView -- in which case the app crashes
+        @SuppressWarnings("unused")
+        CookieSyncManager cookieSyncMngr =
+            CookieSyncManager.createInstance(context);
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.removeAllCookie();
+    }
+
 
 }

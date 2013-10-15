@@ -21,13 +21,13 @@ import android.graphics.Bitmap.CompressFormat;
 import android.net.Uri;
 import android.util.Log;
 
-import com.example.takasukamera.R;
 import com.framgia.takasukamera.constant.AppConstant;
+import com.framgia.takasukamera.util.Utils;
 
 /**
  * This class contains all function execute with Twitter.
  * 
- * @author Penguin
+ * @author TuyenDN
  * 
  */
 public class TwitterUtils {
@@ -40,6 +40,12 @@ public class TwitterUtils {
 
 	/** Default of CallBack. */
 	public static final String CALLBACK_URL = "takasukamera://twitter";
+
+	/** Consumer key */
+	private static String CONSUMER_KEY = "";
+	
+	/** Consumer secret */
+	private static String CONSUMER_SECRET = "";
 
 	/**
 	 * This function is used to check authenticated.
@@ -88,6 +94,7 @@ public class TwitterUtils {
 					editor.commit();
 				}
 			} catch (Exception e) {
+				Log.i("Get Twitter UserName", "Error: "+e.getMessage());
 				return null;
 			}
 		}
@@ -153,8 +160,9 @@ public class TwitterUtils {
 
 		ConfigurationBuilder confbuilder = new ConfigurationBuilder();
 		Configuration conf = confbuilder
-				.setOAuthConsumerKey(context.getString(R.string.twitter_comsumer_key))
-				.setOAuthConsumerSecret(context.getString(R.string.twitter_comsumer_secret))
+				.setOAuthConsumerKey(CONSUMER_KEY)
+				.setOAuthConsumerSecret(
+						CONSUMER_SECRET)
 				.setOAuthAccessToken(token).setOAuthAccessTokenSecret(secret)
 				.build();
 		twitter = new TwitterFactory(conf).getInstance();
@@ -171,15 +179,11 @@ public class TwitterUtils {
 			callBackURL = CALLBACK_URL;
 		}
 		ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-		configurationBuilder.setOAuthConsumerKey(context
-				.getString(R.string.twitter_comsumer_key));
-		configurationBuilder.setOAuthConsumerSecret(context
-				.getString(R.string.twitter_comsumer_secret));
+		configurationBuilder.setOAuthConsumerKey(CONSUMER_KEY);
+		configurationBuilder.setOAuthConsumerSecret(CONSUMER_SECRET);
 		Configuration configuration = configurationBuilder.build();
 		twitter = new TwitterFactory(configuration).getInstance();
-
 		try {
-
 			requestToken = twitter.getOAuthRequestToken(callBackURL);
 			Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(requestToken
 					.getAuthenticationURL() + "&force_login=true"));
@@ -230,7 +234,7 @@ public class TwitterUtils {
 	public static void logout(Context context) {
 
 		// Clear Cookies.
-		FbUtil.clearCookies(context);
+		Utils.clearCookies(context);
 
 		SharedPreferences prefs = context.getSharedPreferences(
 				AppConstant.PREFERENCE_NAME, Context.MODE_PRIVATE);
@@ -240,4 +244,16 @@ public class TwitterUtils {
 		editor.remove(AppConstant.USER_TWITTER);
 		editor.commit();
 	}
+
+	/**
+	 * Method used to set ConsumerId for twitter.
+	 * 
+	 * @param CONSUMER_KEY
+	 * @param CONSUMER_SECRET
+	 */
+	public static void setConsumerId(String consumer_key, String consumer_secret) {
+		CONSUMER_KEY = consumer_key;
+		CONSUMER_SECRET = consumer_secret;
+	}
+
 }

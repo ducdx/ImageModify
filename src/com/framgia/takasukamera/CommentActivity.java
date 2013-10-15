@@ -49,22 +49,7 @@ public class CommentActivity extends Activity implements OnClickListener,FbLogin
 	
 	/** Variable of CallBack. */
 	private String urlCallBack = "takasukamera://twitter";
-	
-	@Override
-	protected void onNewIntent(Intent intent) {
-		Uri uri = intent.getData();
-		boolean result = TwitterUtils.handleOAuthCallback(this, uri,
-				urlCallBack);
-		if (result) {
-			Toast.makeText(this, getString(R.string.login_fb_success),
-					Toast.LENGTH_LONG).show();
-		} else {
-			Toast.makeText(this, getString(R.string.login_fb_failure),
-					Toast.LENGTH_LONG).show();
-			finish();
-		}
-		super.onNewIntent(intent);
-	}
+
 
 	private Bundle bundle;
 	
@@ -93,7 +78,7 @@ public class CommentActivity extends Activity implements OnClickListener,FbLogin
 				"kameraAppSharedPreferences", MODE_PRIVATE);
 		mProgressDialog = new ProgressDialog(this);
 		// get option to share via twitter or facebook
-		shareOption = getIntent().getExtras().getInt(AppConstant.SHARE_REQUEST);
+		shareOption = bundle.getInt(AppConstant.SHARE_REQUEST);
 		
 		if (FacebookUtils.isAuthenticated(this)) {
 			// Process logout facebook.
@@ -343,6 +328,24 @@ public class CommentActivity extends Activity implements OnClickListener,FbLogin
 			editComment.requestFocus();
 			getWindow().setSoftInputMode(LayoutParams.SOFT_INPUT_STATE_VISIBLE);
 		}
+	}
+	
+	@Override
+	protected void onNewIntent(Intent intent) {
+		Uri uri = intent.getData();
+		boolean result = TwitterUtils.handleOAuthCallback(this, uri,
+				urlCallBack);
+		if (result) {
+			Toast.makeText(this, getString(R.string.login_fb_success),
+					Toast.LENGTH_LONG).show();
+			// Perform post to twitter.
+			new PostMessage().execute(AppConstant.TO_TWITTER);
+		} else {
+			Toast.makeText(this, getString(R.string.login_fb_failure),
+					Toast.LENGTH_LONG).show();
+			finish();
+		}
+		super.onNewIntent(intent);
 	}
 
 	@Override
